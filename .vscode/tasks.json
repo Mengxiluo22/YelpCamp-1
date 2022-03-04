@@ -1,0 +1,22 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+                
+        {
+            "type": "cppbuild",
+            "label": "shell_builder",
+            "command": "/usr/bin/gcc",
+            "args": [
+                "-Wall","-Werror","wish.c","-o","wish","-g"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/shell"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": "build",
+            "detail": "compiler: /usr/bin/gcc"
+        }
+    ]
+}
