@@ -17,24 +17,26 @@ exec(char *path, char **argv)
   struct inode *ip;
   struct proghdr ph;
   pde_t *pgdir, *oldpgdir;
+  // This creates a process structure
   struct proc *curproc = myproc();
 
   begin_op();
-
+  // Instruction Pointer -> if there is no IP, we fail
   if((ip = namei(path)) == 0){
     end_op();
     cprintf("exec: fail\n");
     return -1;
   }
-  ilock(ip);
+  ilock(ip); // place a lock
   pgdir = 0;
 
-  // Check ELF header
+  // Check ELF header -> format for executable files
+  //  check if machine can read executable
   if(readi(ip, (char*)&elf, 0, sizeof(elf)) != sizeof(elf))
     goto bad;
   if(elf.magic != ELF_MAGIC)
     goto bad;
-
+  // kernel part of page table
   if((pgdir = setupkvm()) == 0)
     goto bad;
 
@@ -65,7 +67,7 @@ exec(char *path, char **argv)
   sz = PGROUNDUP(sz);
   if((sz = allocuvm(pgdir, sz, sz + 2*PGSIZE)) == 0)
     goto bad;
-  clearpteu(pgdir, (char*)(sz - 2*PGSIZE));
+  clearpteu(pgdir, (char*)(sz - 2*PGSIZE)); //clear page table entry
   sp = sz;
 
   // Push argument strings, prepare rest of stack in ustack.
@@ -79,7 +81,7 @@ exec(char *path, char **argv)
   }
   ustack[3+argc] = 0;
 
-  ustack[0] = 0xffffffff;  // fake return PC
+  ustack[0] = 0xffffffff;  // fake return PC -> programme counter
   ustack[1] = argc;
   ustack[2] = sp - (argc+1)*4;  // argv pointer
 
