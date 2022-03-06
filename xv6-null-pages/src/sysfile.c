@@ -443,3 +443,15 @@ sys_pipe(void)
   fd[1] = fd1;
   return 0;
 }
+
+int sys_mprotect(void) {
+  // TODO
+// int mprotect(void *addr, int len) {
+  return 0;
+}
+
+int sys_munprotect(void){
+  // TODO
+// int munprotect(void *addr, int len){
+  return 0;
+}
