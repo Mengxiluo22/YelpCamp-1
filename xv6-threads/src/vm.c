@@ -41,17 +41,17 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
   pde = &pgdir[PDX(va)];
   if(*pde & PTE_P){
     pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
-  } else {
+  } else {// if pde is not valid: create new subtable, clear this table, point pde to pgtab and make pde as valid,writable,usermodeable
     if(!alloc || (pgtab = (pte_t*)kalloc()) == 0)
       return 0;
     // Make sure all those PTE_P bits are zero.
-    memset(pgtab, 0, PGSIZE);
+    memset(pgtab, 0, PGSIZE);//make first page full of 0
     // The permissions here are overly generous, but they can
     // be further restricted by the permissions in the page table
     // entries, if necessary.
     *pde = V2P(pgtab) | PTE_P | PTE_W | PTE_U;
   }
-  return &pgtab[PTX(va)];
+  return &pgtab[PTX(va)];// return the address of va represent in pgtab
 }
 
 // Create PTEs for virtual addresses starting at va that refer to
@@ -63,8 +63,8 @@ mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
   char *a, *last;
   pte_t *pte;
 
-  a = (char*)PGROUNDDOWN((uint)va);
-  last = (char*)PGROUNDDOWN(((uint)va) + size - 1);
+  a = (char*)PGROUNDDOWN((uint)va);//starting address
+  last = (char*)PGROUNDDOWN(((uint)va) + size - 1);//end address
   for(;;){
     if((pte = walkpgdir(pgdir, a, 1)) == 0)
       return -1;
@@ -202,7 +202,7 @@ loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
 
   if((uint) addr % PGSIZE != 0)
     panic("loaduvm: addr must be page aligned");
-  for(i = 0; i < sz; i += PGSIZE){
+  for(i = 0; i < sz; i += PGSIZE){// [change?] i=0 to i=gasize, get error: lapicid 1: panic: loaduvm: address should exist
     if((pte = walkpgdir(pgdir, addr+i, 0)) == 0)
       panic("loaduvm: address should exist");
     pa = PTE_ADDR(*pte);
@@ -322,8 +322,8 @@ copyuvm(pde_t *pgdir, uint sz)
 
   if((d = setupkvm()) == 0)
     return 0;
-  for(i = 0; i < sz; i += PGSIZE){
-    if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
+  for(i = 0; i < sz; i += PGSIZE){ //[changed] 
+    if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)//look at vd i and maped acc
       panic("copyuvm: pte should exist");
     if(!(*pte & PTE_P))
       panic("copyuvm: page not present");
@@ -331,13 +331,13 @@ copyuvm(pde_t *pgdir, uint sz)
     flags = PTE_FLAGS(*pte);
     if((mem = kalloc()) == 0)
       goto bad;
-    memmove(mem, (char*)P2V(pa), PGSIZE);
-    if(mappages(d, (void*)i, PGSIZE, V2P(mem), flags) < 0) {
+    memmove(mem, (char*)P2V(pa), PGSIZE); //Copies the PGSIZE bytes from p2v(pa)to mem: copy memory from opld physical page to new physical page
+    if(mappages(d, (void*)i, PGSIZE, V2P(mem), flags) < 0) {//Creates translations from va (virtual address) to pa (physical address) in existing page table pgdir.
       kfree(mem);
       goto bad;
     }
   }
-  return d;
+  return d;//return address of new page table
 
 bad:
   freevm(d);
