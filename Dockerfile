@@ -43,7 +43,8 @@ USER xv6user
 WORKDIR /home/xv6user/xv6/
 RUN chdir /home/xv6user/xv6/
 RUN git clone git://github.com/mit-pdos/xv6-riscv.git
-
+RUN git config --global core.autocrlf true
+RUN chmod 777 /home/xv6user/xv6/ -R
 
 
 # CMD ["/bin/bash"]
